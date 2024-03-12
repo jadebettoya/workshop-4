@@ -1,38 +1,30 @@
 import bodyParser from "body-parser";
-import express, { Request, Response } from "express";
-import { REGISTRY_PORT } from "../config";
+import express from "express";
+import { REGISTRY_PORT } from "./config";
 
 export type Node = { 
   nodeId: number; 
-  pubKey: string 
-  lastReceivedEncryptedMessage: string | null; // Dernier message reçu en version chiffrée
-  lastReceivedDecryptedMessage: string | null; // Dernier message reçu en version déchiffrée
-  lastMessageDestination: number | null; // Dernière destination du dernier message reçu
+  pubKey: string;
+  lastReceivedEncryptedMessage: string | null;
+  lastReceivedDecryptedMessage: string | null;
+  lastMessageDestination: number | null;
 };
 
 let nodes: Node[] = [];
 
-export type RegisterNodeBody = {
-  nodeId: number;
-  pubKey: string;
-};
-
-export type GetNodeRegistryBody = {
-  nodes: Node[];
-};
-
 export async function launchRegistry() {
-  const _registry = express();
-  _registry.use(express.json());
-  _registry.use(bodyParser.json());
+  const app = express();
 
-  // TODO implement the status route
-  _registry.get("/status", (req, res) => {
+  app.use(express.json());
+  app.use(bodyParser.json());
+
+  // Implement the status route
+  app.get("/status", (req, res) => {
     res.send("live");
   });
 
   // Route to get the last received encrypted message for a node
-  _registry.get("/getLastReceivedEncryptedMessage/:nodeId", (req, res) => {
+  app.get("/getLastReceivedEncryptedMessage/:nodeId", (req, res) => {
     const nodeId = parseInt(req.params.nodeId);
     const node = nodes.find((n) => n.nodeId === nodeId);
     if (node) {
@@ -43,7 +35,7 @@ export async function launchRegistry() {
   });
 
   // Route to get the last received decrypted message for a node
-  _registry.get("/getLastReceivedDecryptedMessage/:nodeId", (req, res) => {
+  app.get("/getLastReceivedDecryptedMessage/:nodeId", (req, res) => {
     const nodeId = parseInt(req.params.nodeId);
     const node = nodes.find((n) => n.nodeId === nodeId);
     if (node) {
@@ -54,7 +46,7 @@ export async function launchRegistry() {
   });
 
   // Route to get the last message destination for a node
-  _registry.get("/getLastMessageDestination/:nodeId", (req, res) => {
+  app.get("/getLastMessageDestination/:nodeId", (req, res) => {
     const nodeId = parseInt(req.params.nodeId);
     const node = nodes.find((n) => n.nodeId === nodeId);
     if (node) {
@@ -64,9 +56,8 @@ export async function launchRegistry() {
     }
   });
 
-  
-  const server = _registry.listen(REGISTRY_PORT, () => {
-    console.log(`registry is listening on port ${REGISTRY_PORT}`);
+  const server = app.listen(REGISTRY_PORT, () => {
+    console.log(`Registry is listening on port ${REGISTRY_PORT}`);
   });
 
   return server;
